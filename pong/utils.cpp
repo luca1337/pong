@@ -28,7 +28,7 @@ namespace drawings {
 }// namespace drawings
 
 namespace collisions {
-	auto CheckIntersectionCircleAndRectangle(const cBall& ball, const cPalette& palette) -> bool
+	auto CheckIntersectionCircleAndRectangle(const cBall& ball, const cPalette& palette) -> std::tuple<bool, glm::fvec2>
 	{
 		const auto closestX = glm::clamp(ball.Position().x, palette.Position().x, palette.Position().x + palette.Size().x);
 		const auto closestY = glm::clamp(ball.Position().y, palette.Position().y, palette.Position().y + palette.Size().y);
@@ -36,7 +36,7 @@ namespace collisions {
 		const auto distX = (ball.Position().x - closestX);
 		const auto distY = (ball.Position().y - closestY);
 
-		return (glm::pow(distX, 2) + glm::pow(distY, 2)) <= glm::pow(ball.Radius(), 2);
+		return std::make_tuple((glm::pow(distX, 2) + glm::pow(distY, 2)) <= glm::pow(ball.Radius(), 2), glm::fvec2{ closestX, closestY });
 	}
 }// namespace collisions
 

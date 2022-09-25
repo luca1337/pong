@@ -13,5 +13,5 @@ namespace drawings {
 }// namespace drawings
 
 namespace collisions {
-	auto CheckIntersectionCircleAndRectangle(const cBall& ball, const cPalette& palette) -> bool;
+	auto CheckIntersectionCircleAndRectangle(const cBall& ball, const cPalette& palette) -> std::tuple<bool, glm::fvec2>;
 }// namespace collisions

@@ -8,8 +8,8 @@
 cBall::cBall(cGameManager& gameManager) : cObject{}, m_hGameManager { gameManager }, m_vCurrentDirection{ 0, 0 } 
 {
 	m_vLocation = { 450, 400 };
-	name = "ball";
 	m_sColor = { 0xff, 0xff, 0xff, 0xff };
+	name = "ball";
 }
 
 auto cBall::Update() -> void
@@ -38,7 +38,7 @@ auto cBall::Reset() -> void
 	m_vCurrentDirection = { 0, 0 };
 }
 
-auto cBall::RandomSpin() -> void
+auto cBall::Spin() -> void
 {
 	const auto randomDirections = std::vector<glm::vec2>{
 		{-1.0f, -1.0f},

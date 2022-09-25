@@ -6,10 +6,37 @@
 
 #include "utils.h"
 
+#include <optional>
+
+auto ResolvePaddleCollision(const auto hasPaddleCollided, const auto& closestPoint, const auto& ball, const auto& paddle) -> const std::optional<glm::fvec2> {
+	if (hasPaddleCollided)
+	{
+		auto newDirectionNormal = glm::fvec2{};
+
+		const auto isLeftPaddle = paddle.IsAI();
+		const auto upperCornerNormal = isLeftPaddle ? glm::fvec2{ +1, +1 } : glm::fvec2{ -1, +1 };
+		const auto lowerCornerNormal = isLeftPaddle ? glm::fvec2{ +1, -1 } : glm::fvec2{ +1, -1 };
+		const auto upperCornerCheck = isLeftPaddle ? glm::fvec2{ paddle.Position().x + paddle.Size().x, paddle.Position().y } : glm::fvec2{ paddle.Position().x, paddle.Position().y };
+		const auto lowerCornerCheck = isLeftPaddle ? glm::fvec2{ paddle.Position().x + paddle.Size().x, paddle.Position().y + paddle.Size().y } : glm::fvec2{ paddle.Position().x, paddle.Position().y + paddle.Size().y };
+		const auto upperBorderCheck = isLeftPaddle ? glm::fvec2{ paddle.Position().x + paddle.Size().x, paddle.Position().y + paddle.Size().y } : glm::fvec2{ paddle.Position().x, paddle.Position().y + paddle.Size().y };
+
+		// check whether the collision happened on the corner of the palette
+		if (closestPoint == upperCornerCheck) { newDirectionNormal = upperCornerNormal; }
+		else if (closestPoint == lowerCornerCheck) { newDirectionNormal = lowerCornerNormal; }
+		else if (closestPoint.x > paddle.Position().x && closestPoint.x < paddle.Position().x + paddle.Size().x && closestPoint.y == paddle.Position().y) { newDirectionNormal = upperCornerNormal; }
+		else if (closestPoint.x > paddle.Position().x && closestPoint.x < paddle.Position().x + paddle.Size().x && closestPoint.y == paddle.Position().y + paddle.Size().y) { newDirectionNormal = lowerCornerNormal; }
+		else { newDirectionNormal = { +1, +0 }; }
+
+		return glm::normalize(glm::reflect(ball.Direction(), newDirectionNormal));
+	}
+
+	return std::nullopt;
+};
+
 cGameManager::cGameManager(cWindow& gameWindow)
 	: m_hGameWindow{ gameWindow }, m_hBall(*this),
-	m_hLeftPalette(*this, SDL_Color{ 0x0, 0xff, 0x0, 0xff }, false),
-	m_hRightPalette(*this, SDL_Color{ 0xff, 0x0, 0x0, 0xff }, true) {}
+	m_hLeftPalette(*this, SDL_Color{ 0xff, 0xff, 0xff, 0xff }, false),
+	m_hRightPalette(*this, SDL_Color{ 0xff, 0xff, 0xff, 0xff }, true) {}
 
 auto cGameManager::Update() -> void
 {
@@ -41,19 +68,26 @@ auto cGameManager::UpdateGameLogic() -> void
 {
 	if (m_hGameWindow.GetKey(SDL_SCANCODE_SPACE) && !m_bIsPlaying)
 	{
-		m_hBall.RandomSpin();
+		m_hBall.Spin();
 		m_bIsPlaying = true;
 	}
 
-	const auto beginCollisionWithLeftPaddle = collisions::CheckIntersectionCircleAndRectangle(m_hBall, m_hLeftPalette);
-	const auto beginCollisionWithRightPaddle = collisions::CheckIntersectionCircleAndRectangle(m_hBall, m_hRightPalette);
+#pragma region CHECK_AND_RESOLVE_COLLISIONS
+	const auto& [leftPaddleHasCollided, leftPaddleClosestPoint] = collisions::CheckIntersectionCircleAndRectangle(m_hBall, m_hLeftPalette);
+	const auto& [rightPaddleHasCollided, rightPaddleClosestPoint] = collisions::CheckIntersectionCircleAndRectangle(m_hBall, m_hRightPalette);
 
-	if (beginCollisionWithLeftPaddle) { m_hBall.Direction() = glm::reflect(m_hBall.Direction(), glm::vec2{ +1, 0 }); }
-	if (beginCollisionWithRightPaddle) { m_hBall.Direction() = glm::reflect(m_hBall.Direction(), glm::vec2{ -1, 0 }); }
+	if (const auto hitNormal = ResolvePaddleCollision(leftPaddleHasCollided, leftPaddleClosestPoint, m_hBall, m_hLeftPalette)) { m_hBall.Direction() = hitNormal.value(); }
+	if (const auto hitNormal = ResolvePaddleCollision(rightPaddleHasCollided, rightPaddleClosestPoint, m_hBall, m_hRightPalette)) { m_hBall.Direction() = hitNormal.value(); }
+#pragma endregion
 
 	// Check if ball is outside lateral bounds
 	const auto& [screenW, screenH] = m_hGameWindow.GetSize();
-
-	if (m_hBall.Position().x + m_hBall.Radius() > screenW) { m_hBall.Reset(); m_hLeftPalette.Reset(); m_hRightPalette.Reset(); m_bIsPlaying = false; }
-	if (m_hBall.Position().x - m_hBall.Radius() < 0) { m_hBall.Reset(); m_hLeftPalette.Reset(); m_hRightPalette.Reset(); m_bIsPlaying = false; }
+	if ((m_hBall.Position().x + m_hBall.Radius()) > screenW 
+		|| (m_hBall.Position().x - m_hBall.Radius()) < 0)
+	{
+		m_hBall.Reset();
+		m_hLeftPalette.Reset();
+		m_hRightPalette.Reset();
+		m_bIsPlaying = false;
+	}
 }

@@ -19,7 +19,7 @@ public:
 	const auto& Position() const { return m_vLocation; }
 	auto& Size() { return m_vSize; }
 	auto& Size() const { return m_vSize; }
-	auto IsAI() const { return m_bIsAI; }	
+	auto IsAI() const { return m_bIsAI; }
 private:
 	class cGameManager& m_hGameManager;
 

@@ -23,10 +23,11 @@ public:
 
 public:
 	auto& Direction() { return m_vCurrentDirection; }
+	auto Direction() const { return m_vCurrentDirection; }
 	auto& Position() { return m_vLocation; }
 	const auto& Position() const { return m_vLocation; }
 	auto Radius() const { return m_fRadius; }
-	auto RandomSpin() -> void;
+	auto Spin() -> void;
 
 private:
 	class cGameManager& m_hGameManager;
